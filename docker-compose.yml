@@ -1,0 +1,101 @@
+version: "3.9"
+
+networks:
+ frontend:
+  driver: bridge
+ backend:
+  driver: bridge
+
+services:
+ api:
+  build: .
+  container_name: taskflow-api
+  tmpfs:
+    - /tmp/sessions
+  networks:
+    -  backend
+    -  frontend
+  environment: 
+   - DATABASE_URL=mysql+pymysql://efrem:${MYSQL_PASSWORD}@db:3306/taskflow
+   - REDIS_HOST=redis
+  cap_drop:
+   - ALL
+  cap_add:
+   - NET_BIND_SERVICE
+  security_opt:
+   - no-new-privileges:true
+  read_only: true
+  volumes:
+   - ./app:/app
+  healthcheck:
+   test: ["CMD","python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+   interval: 10s
+   timeout: 5s
+   retries: 5
+   start_period: 20s
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+
+ db:
+  image: mysql:8.0
+  container_name: taskflow-db
+  networks: 
+   -  backend
+  environment:
+   MYSQL_DATABASE: taskflow
+   MYSQL_USER: efrem
+   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  volumes:
+   -  mysql_data:/var/lib/mysql
+  healthcheck:
+    test: ["CMD","mysqladmin", "ping", "-h", "localhost", "-u", "efrem", "-p${MYSQL_PASSWORD}"]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+    start_period: 15s
+  restart: unless-stopped
+ redis:
+  image: redis:7-alpine
+  container_name: taskflow-redis
+  networks:
+   -  backend
+  healthcheck:
+   test: ["CMD", "redis-cli", "ping"]
+   interval: 5s
+   timeout: 3s
+   retries: 3
+
+ nginx:
+  image: nginx:alpine
+  container_name: taskflow-nginx
+  networks:
+   -  frontend
+  ports:
+   - "80:80"
+  volumes:
+   - type: bind
+     source: ./nginx/nginx.conf
+     target: /etc/nginx/nginx.conf
+     read_only: true
+  depends_on:
+   api: 
+    condition: service_healthy
+   
+ debug:
+  image: nicolaka/netshoot
+  container_name: taskflow-debug
+
+  networks:
+    - backend
+    - frontend
+
+  tty: true
+  stdin_open: true
+
+volumes:
+ mysql_data:

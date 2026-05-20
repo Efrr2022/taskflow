@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+ api:
+  image: taskflow-api:latest
+  restart: always
+  environment:
+    - LOG_LEVEL=warning
+    - WORKERS=4
+  deploy: 
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 512M
+      reservations:
+        cpus: "0.25"
+        memory: 128M
+ db:
+  restart: always
+
+ nginx:
+  restart: always
+  deploy:
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 128M
