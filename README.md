@@ -369,9 +369,13 @@ This repository evolves week-by-week while learning cloud-native infrastructure.
 
 ---
 
-# Author
+## 👨‍💻 Author
 
-Built as a hands-on cloud-native infrastructure and container security learning project.
+Efrem Sultan
+
+GitHub:
+https://github.com/Efrr2022
+
 
 ---
 
