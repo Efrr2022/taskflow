@@ -1,381 +1,278 @@
 # TaskFlow API
 
-A production-grade task management REST API built to demonstrate modern Docker containerization, security hardening, and multi-service orchestration using FastAPI, MySQL, Redis, Nginx, and Distroless containers.
+A production-grade task management REST API built to demonstrate modern cloud-native application development using FastAPI, MySQL, Redis, Docker, and Kubernetes.
+
+The project follows a hands-on DevOps learning journey, progressing from containerization fundamentals to Kubernetes orchestration and cloud deployment.
 
 ---
 
-# Architecture
+## Architecture
+
+### Docker Architecture
 
 ```text
-Internet → Nginx (Reverse Proxy) → FastAPI API → MySQL + Redis
+Internet
+    │
+    ▼
+ Nginx Reverse Proxy
+    │
+    ▼
+ FastAPI Application
+    │
+ ┌──┴──┐
+ ▼     ▼
+MySQL Redis
 ```
 
-| Service | Technology | Purpose |
-|---|---|---|
-| API | Python + FastAPI | REST API endpoints |
-| Database | MySQL 8.0 | Persistent task storage |
-| Cache | Redis 7 | Task counters & caching |
-| Proxy | Nginx | Reverse proxy & TLS termination |
-
----
-
-# Features
-
-- Multi-stage Docker builds
-- Distroless production runtime
-- Redis caching integration
-- MySQL persistent storage
-- Nginx reverse proxy
-- Docker Compose orchestration
-- Health checks with dependency chaining
-- Security-hardened containers
-- Development & production override configurations
-- Bind mounts for hot reload development
-
----
-
-# What This Project Demonstrates
-
-## Docker & Containerization
-- Multi-stage builds
-- Distroless images
-- Docker networking
-- Volumes & bind mounts
-- Health checks
-- Compose overrides
-- Environment variable management
-
-## Security Hardening
-- Non-root container user
-- Read-only filesystem
-- Dropped Linux capabilities
-- `no-new-privileges`
-- Reduced CVE surface
-- Distroless runtime image
-
-## Infrastructure Concepts
-- Reverse proxy architecture
-- Service isolation
-- Network segmentation
-- Dependency orchestration
-- Production vs development environments
-
----
-
-# Security Highlights
-
-- Distroless runtime image
-- Zero critical vulnerabilities in base image
-- Containers run as non-root user
-- Read-only container filesystem
-- All Linux capabilities dropped except `NET_BIND_SERVICE`
-- Secrets managed via `.env`
-- Internal database network isolation
-- Docker Scout vulnerability scanning
-
----
-
-# Image Optimization
-
-| Stage | Before | After |
-|---|---|---|
-| Image Size | ~270MB | ~85MB |
-| Vulnerabilities | Multiple Critical/High | Reduced attack surface |
-| Runtime | Full Linux | Distroless |
-
----
-
-# Project Structure
+### Kubernetes Architecture
 
 ```text
-taskflow/
-├── app/
-│   ├── main.py
-│   ├── models.py
-│   ├── database.py
-│   ├── requirements.txt
-│   └── ...
-│
-├── nginx/
-│   └── nginx.conf
-│
-├── Dockerfile
-├── docker-compose.yml
-├── docker-compose.override.yml
-├── docker-compose.prod.yml
-├── .env.example
-└── README.md
+┌──────────────────────────────────────────────┐
+│              taskflow namespace              │
+│                                              │
+│ Internet                                     │
+│    │                                         │
+│    ▼                                         │
+│ NodePort Service                             │
+│    │                                         │
+│    ▼                                         │
+│ TaskFlow API Deployment (2 Replicas)         │
+│    │                                         │
+│ ┌──┴─────────────┐                           │
+│ ▼                ▼                           │
+│ MySQL            Redis                       │
+│ StatefulSet      Deployment                  │
+│ PVC: 1Gi         In-Memory Cache             │
+│                                              │
+│ CronJob → Automated MySQL Backups            │
+└──────────────────────────────────────────────┘
 ```
 
 ---
 
-# Quick Start
+# Technology Stack
+
+| Layer            | Technology            |
+| ---------------- | --------------------- |
+| API              | FastAPI               |
+| Database         | MySQL 8               |
+| Cache            | Redis 7               |
+| Reverse Proxy    | Nginx                 |
+| Containerization | Docker                |
+| Orchestration    | Kubernetes            |
+| Runtime          | Distroless Containers |
+| Platform         | Minikube              |
+| Operating System | WSL Ubuntu            |
+
+---
+
+# Key Features
+
+## Application Features
+
+* RESTful task management API
+* MySQL persistent storage
+* Redis caching and statistics
+* Health monitoring endpoints
+* Production-ready configuration
+
+## Docker Features
+
+* Multi-stage builds
+* Distroless runtime images
+* Docker Compose orchestration
+* Bind mounts for development
+* Environment-based configuration
+* Health checks and dependency management
+
+## Kubernetes Features
+
+* Deployments and ReplicaSets
+* StatefulSets with Persistent Volumes
+* Services and Service Discovery
+* Startup, Readiness, and Liveness Probes
+* Resource Requests and Limits
+* ResourceQuota and LimitRange
+* Rolling Updates and Rollbacks
+* CronJobs for automated backups
+* Node Affinity
+* Taints and Tolerations
+* Self-healing workloads
+
+---
+
+# Security Features
+
+* Non-root containers
+* Distroless runtime images
+* Read-only filesystems
+* Dropped Linux capabilities
+* no-new-privileges security option
+* Network isolation
+* Environment-based secrets management
+* Reduced attack surface
+
+---
+
+# Deployment
 
 ## Prerequisites
 
-- Docker Desktop
-- Git
+* Docker Desktop
+* Minikube
+* kubectl
+* WSL Ubuntu
+* Git
 
 ---
 
-## Clone Repository
+## Build Application Image
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/taskflow.git
-cd taskflow
+minikube docker-env | Invoke-Expression
+docker build -t taskflow-api:latest .
 ```
 
 ---
 
-## Configure Environment Variables
+## Deploy to Kubernetes
 
 ```bash
-cp .env.example .env
+bash k8s/deploy.sh
 ```
-
-Update the `.env` file with your values.
 
 ---
 
-## Run Development Environment
+## Access Application
 
 ```bash
-docker compose up --build
-```
-
-API available at:
-
-```text
-http://localhost/docs
+minikube service taskflow-api-svc -n taskflow --url
 ```
 
 ---
 
-# Production Deployment
+# Useful Commands
+
+## View Resources
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+kubectl get all -n taskflow
 ```
 
----
-
-# API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Health check |
-| POST | `/users` | Register user |
-| GET | `/tasks` | List tasks |
-| POST | `/tasks` | Create task |
-| PUT | `/tasks/{id}` | Update task |
-| DELETE | `/tasks/{id}` | Delete task |
-| GET | `/stats` | Redis-backed statistics |
-
----
-
-# Docker Compose Architecture
-
-## Base Compose
-`docker-compose.yml`
-
-Contains:
-- Core services
-- Networks
-- Security settings
-- Health checks
-- Volumes
-
----
-
-## Development Override
-`docker-compose.override.yml`
-
-Contains:
-- Bind mounts
-- Hot reload
-- Debug logging
-- Local port exposure
-
----
-
-## Production Override
-`docker-compose.prod.yml`
-
-Contains:
-- Production scaling
-- Resource limits
-- Optimized runtime settings
-
----
-
-# Container Security Configuration
-
-## Security Features Used
-
-```yaml
-cap_drop:
-  - ALL
-
-cap_add:
-  - NET_BIND_SERVICE
-
-security_opt:
-  - no-new-privileges:true
-
-read_only: true
-```
-
----
-
-# Health Checks
-
-All services implement container health checks:
-
-- API endpoint validation
-- MySQL readiness checks
-- Redis ping checks
-- Dependency startup ordering
-
----
-
-# Docker Scout Scanning
-
-Example vulnerability scanning:
+## Watch Pods
 
 ```bash
-docker scout quickview taskflow-api
-docker scout cves taskflow-api
+kubectl get pods -n taskflow -w
 ```
-
----
-
-# Development Workflow
-
-## Rebuild Containers
-
-```bash
-docker compose build --no-cache
-```
-
----
-
-## Restart Services
-
-```bash
-docker compose up -d
-```
-
----
 
 ## View Logs
 
 ```bash
-docker logs taskflow-api
+kubectl logs -l app=taskflow-api -n taskflow
 ```
 
----
-
-## Enter Debug Container
+## Check Resource Usage
 
 ```bash
-docker exec -it taskflow-debug sh
+kubectl top pods -n taskflow
+```
+
+## Deployment Status
+
+```bash
+kubectl rollout status deployment/taskflow-api -n taskflow
+```
+
+## Rollback Deployment
+
+```bash
+kubectl rollout undo deployment/taskflow-api -n taskflow
 ```
 
 ---
 
-# Networking
+# Learning Journey
 
-## Internal Networks
+## Week 1 – Docker & Containerization ✅
 
-| Network | Purpose |
-|---|---|
-| frontend | Public-facing services |
-| backend | Internal services only |
+* Multi-stage builds
+* Docker networking
+* Volumes and bind mounts
+* Distroless containers
+* Security hardening
+* Docker Compose
 
-The database is isolated from public access.
+## Week 2 – Kubernetes Fundamentals ✅
 
----
+* Namespaces
+* Deployments
+* Services
+* ReplicaSets
+* StatefulSets
+* Persistent Volumes
+* Health Probes
+* Resource Management
+* CronJobs
+* Scheduling
+* Rolling Updates
 
-# Technologies Used
+## Upcoming Topics
 
-- Python 3.11
-- FastAPI
-- SQLAlchemy
-- MySQL 8
-- Redis 7
-- Nginx
-- Docker
-- Docker Compose
-- Distroless Images
+### Week 3
 
----
+* Jobs
+* DaemonSets
+* Advanced Scheduling
 
-# Learning Roadmap
+### Week 4
 
-This repository evolves week-by-week while learning cloud-native infrastructure.
+* Ingress
+* TLS
+* Network Policies
 
-## Week 1
-- Docker fundamentals
-- Multi-stage builds
-- Volumes
-- Networking
-- Distroless images
-- Security hardening
+### Week 5
 
-## Week 2
-- Kubernetes Pods
-- Deployments
-- Services
+* StorageClasses
+* Dynamic Provisioning
 
-## Week 3
-- StatefulSets
-- Jobs & CronJobs
-- Resource limits
+### Week 6
 
-## Week 4
-- Ingress
-- TLS
-- Network Policies
+* RBAC
+* Horizontal Pod Autoscaler
+* Production Operations
 
-## Week 5
-- Persistent Volumes
-- StorageClasses
+### Week 7
 
-## Week 6
-- RBAC
-- Horizontal Pod Autoscaler
-- Rolling deployments
+* Helm Charts
 
-## Week 7
-- Helm charts
+### Week 8–9
 
-## Week 8-9
-- AWS ECS Fargate
-- CI/CD pipelines
-- GitHub Actions
+* AWS ECS Fargate
+* Amazon ECR
+* GitHub Actions
+* CI/CD Pipelines
 
 ---
 
-# Future Improvements
+# Learning Outcomes
 
-- JWT Authentication
-- Role-based access control
-- HTTPS with Let's Encrypt
-- Prometheus monitoring
-- Grafana dashboards
-- Kubernetes deployment manifests
-- Helm packaging
-- GitHub Actions CI/CD
+This project demonstrates practical experience in:
 
----
-
-## 👨‍💻 Author
-
-Efrem Sultan
-
-GitHub:
-https://github.com/Efrr2022
-
+* Containerization with Docker
+* Production container security
+* Kubernetes workload management
+* Service discovery and networking
+* Persistent storage management
+* Health monitoring and self-healing
+* Resource governance
+* Automated backups
+* Deployment automation
+* Cloud-native application architecture
 
 ---
 
+## Author
+
+**Efrem Sultan**
+
+GitHub: https://github.com/Efrr2022

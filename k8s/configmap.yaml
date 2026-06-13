@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taskflow-config
+  namespace: taskflow
+data:
+  REDIS_HOST: "redis-svc"
+  DATABASE_HOST: "mysql-svc"
+  DATABASE_PORT: "3306"
+  DATABASE_NAME: "taskflow"

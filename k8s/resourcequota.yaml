@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: taskflow-quota
+  namespace: taskflow
+spec:
+  hard:
+    requests.cpu: "3000m"       # total CPU requests across all pods
+    requests.memory: "3Gi"     # total memory requests
+    limits.cpu: "4000m"        # total CPU limits
+    limits.memory: "4Gi"       # total memory limits
+    pods: "20"                 # max number of pods
+    persistentvolumeclaims: "5" # max PVCs

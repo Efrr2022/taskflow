@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup
+  namespace: taskflow
+spec:
+  schedule: "0 * * * *"    # every 5 minutes (use hourly in prod: "0 * * * *")
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: mysql:8.0
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Starting backup at $(date)"
+              mysqldump -h mysql-svc -u taskflow -ppassword taskflow > /tmp/backup.sql
+              echo "Backup complete. Size: $(wc -l < /tmp/backup.sql) lines"
+            env:
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-secret
+                  key: MYSQL_PASSWORD

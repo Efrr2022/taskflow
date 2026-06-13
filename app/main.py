@@ -27,10 +27,31 @@ class TaskUpdate(BaseModel):
     completed: bool = None
 
 # --- Routes ---
+# Global flag to simulate unhealthy state
+_ready = True
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "taskflow-api bind storage","version": "2.0"}
-   
+    return {"status": "ok", "service": "taskflow-api"}
+
+@app.get("/readyz")
+def readyz():
+    if not _ready:
+        from fastapi import Response
+        return Response(status_code=503, content="not ready")
+    return {"ready": True}
+
+@app.post("/simulate/not-ready")
+def simulate_not_ready():
+    global _ready
+    _ready = False
+    return {"message": "readiness disabled"}
+
+@app.post("/simulate/ready")
+def simulate_ready():
+    global _ready
+    _ready = True
+    return {"message": "readiness restored"}
 
 @app.post("/users", status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(database.get_db)):
@@ -45,6 +66,10 @@ def create_user(user: UserCreate, db: Session = Depends(database.get_db)):
 @app.get("/tasks")
 def get_tasks(db: Session = Depends(database.get_db)):
     return db.query(model.Task).all()
+
+@app.get("/version")
+def version():
+    return {"version": "2.0", "message": "Tuesday update"}
 
 @app.post("/tasks", status_code=201)
 def create_task(task: TaskCreate, db: Session = Depends(database.get_db)):
